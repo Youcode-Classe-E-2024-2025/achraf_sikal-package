@@ -1,1 +1,0 @@
-document.getElementById('addform').nextSibling.classList+='block'
