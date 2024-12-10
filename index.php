@@ -12,7 +12,7 @@
     }
     </style>
 </head>
-<body class="">
+<body class="bg-sky-950 text-white">
     <nav class="bg-blue-900 text-white font-black text-3xl p-4 mb-3">
         <h1>package manager</h1>
     </nav>
@@ -43,11 +43,26 @@
         $stmt = $connection->prepare("select * from autors_packages inner join packages on packages.id = autors_packages.package_id inner join autors on autors.id = autors_packages.autor_id");
         $stmt->execute();
         $result = $stmt->get_result();
-        echo '<table class="bg-blue-100" style="width:80%">';
+        // echo '<table class="bg-blue-100" style="width:80%">';
         while($row = $result->fetch_assoc()){
-            echo "<tr><td>",$row["title"],"</td><td>",$row["description"],"</td><td>",$row["name"]."</td><td>",$row["creation_date"]."</td></tr>";
+            echo '<div class="bg-slate-900 w-1/2 min-h-28 mb-3 border-sky-800 border flex align-middle">
+                    <img src="package-x-generic.svg" alt="" width="80">
+                    <div class="flex justify-between w-full">
+                        <div class="">
+                            <h2 class="font-medium">',$row["title"],'</h2>
+                            <p class="text-slate-400">',$row["description"],'</p>
+                            <p class="text-slate-500">last updated: <span>',$row["creation_date"],'</span></p>
+                            <p class="text-slate-500">author: <span>',$row["name"],'</span></p>
+                            <p class="text-slate-500">current version: <span>1.0</span></p>
+                        </div>
+                        <div class="flex flex-col justify-center w-5">
+                            <button><img class="align-middle" width="20px" src="download.svg" alt=""></button>
+                        </div>
+                    </div>
+                </div>';
+            // echo "<tr><td>",$row["title"],"</td><td>",$row["description"],"</td><td>",$row["name"]."</td><td>",$row["creation_date"]."</td></tr>";
         };
-        echo '</table>';
+        // echo '</table>';
         ?>
     </div>
     
