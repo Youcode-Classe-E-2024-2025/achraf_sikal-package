@@ -117,3 +117,4 @@ INSERT INTO Dependencies (parent_Package_ID, Child_Package_ID) VALUES
 (7, 8),
 (6, 7),
 (9, 10);
+select autors.name,autors.email, packages.title,packages.creation_date,packages.description,packages.id,versions.Version_Number,release_date from autors_packages  inner join autors on autors.id = autors_packages.autor_id  inner join packages on packages.id = autors_packages.package_id inner join versions on versions.package_id = autors_packages.package_id WHERE release_date IN(SELECT max(release_date) FROM versions GROUP BY package_id) ORDER BY release_date DESC;

@@ -40,13 +40,13 @@
     <div id="php" class="mt-6 grid justify-items-center" style= "bg-red-600">
         <?php
         $connection = new mysqli("localhost","root","","package_manager");
-        $stmt = $connection->prepare("select * from autors_packages  inner join autors on autors.id = autors_packages.autor_id inner join packages on packages.id = autors_packages.package_id;");
+        $stmt = $connection->prepare("select autors.name,autors.email, packages.title,packages.creation_date,packages.description,packages.id,versions.Version_Number,release_date from autors_packages  inner join autors on autors.id = autors_packages.autor_id  inner join packages on packages.id = autors_packages.package_id inner join versions on versions.package_id = autors_packages.package_id WHERE release_date IN(SELECT max(release_date) FROM versions GROUP BY package_id) ORDER BY release_date DESC;");
         $stmt->execute();
         $result = $stmt->get_result();
         // echo '<table class="bg-blue-100" style="width:80%">';
         while($row = $result->fetch_assoc()){
             echo '<div class="bg-slate-900 w-1/2 min-h-28 mb-3 border-sky-800 border flex align-middle transition-transform hover:scale-105">
-                    <img src="package-x-generic.svg" alt="" width="80">
+                    <img src="./assets/images/package-x-generic.svg" alt="" width="80">
                     <div class="grid grid-cols-12 justify-between w-full">
                         <div class="col-span-11">
                             <h2 class="font-medium">',$row["title"],'</h2>
@@ -57,7 +57,7 @@
                         </div>
                         <form class="flex flex-col justify-center w-5" method="get">
                             <input type="hidden" id="delete" name="delete" value=',$row["id"],'>
-                            <input type="image" class="align-middle" width="20px" src="download.svg" alt="Submit">
+                            <input type="image" class="align-middle" width="20px" src="./assets/images/trash-solid.svg" alt="Submit">
                         </form>
                     </div>
                 </div>';
@@ -66,8 +66,6 @@
         // echo '</table>';
         ?>
     </div>
-    
-    <footer>footer</footer>
     <div class="">
         <?php
             if($_SERVER["REQUEST_METHOD"]=="POST"){
@@ -123,7 +121,9 @@
                 $addversion->execute();
             }
         }elseif ($_SERVER["REQUEST_METHOD"]=="GET") {
-            $packageDelete = (int) $_GET["delete"];
+            if (isset($_GET["delete"])) {
+                $packageDelete = (int) $_GET["delete"];
+            };
             $delete= $connection->prepare("DELETE FROM versions WHERE package_id = ?;");
             $delete->bind_param("i",$packageDelete);
             $delete->execute();
@@ -136,5 +136,6 @@
         };
         ?>
     </div>
+    <footer>footer</footer>
 </body>
 </html>
