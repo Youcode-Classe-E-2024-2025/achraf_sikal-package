@@ -1,4 +1,5 @@
-<?php include_once "helpers.php"; ?>
+<?php include_once "helpers.php";
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,19 +23,41 @@
     </div>
     <form id="addform" action="#" method="post" class="grid gap-1 hidden w-2/12">
         <label for="package">Package: </label>
-        <input type="text" name="package" required>
+        <input type="text" name="package" class="text-black" required>
         <label for="descreption">Descreption: </label>
-        <input type="text" name="descreption" required>
+        <input type="text" name="descreption" class="text-black" required>
         <label for="version">Version: </label>
-        <input type="text" name="version" required>
+        <input type="text" name="version" class="text-black" required>
         <label for="author">Your name: </label>
-        <input type="name" name="author" required>
+        <input type="name" name="author" class="text-black" required>
         <label for="email">Your E-mail: </label>
-        <input type="email" name="email" required>
+        <input type="email" name="email" class="text-black" required>
         <label for="tag">Tag: </label>
-        <input type="text" name="tag" required>
+        <select name="tag" id="tag" class="text-black">
+            <option value="tag">tag</option>
+            <?php
+            $connection = new mysqli("localhost","root","","package_manager");
+            $stmt = $connection->prepare("select * from tags;");
+            $stmt->execute();
+            $result = $stmt->get_result();
+            while($rows = $result->fetch_assoc()){
+                echo '<option value=',$rows["id"],'>',$rows["name"],'</option>';
+            };
+            ?>
+        </select>
         <label for="dependancie">Dependancie: </label>
-        <input type="text" name="dependancie" required>
+        <select name="dependancie" id="dependancie" class="text-black">
+            <option value="dependancie">dependancie</option>
+            <?php
+            $connection = new mysqli("localhost","root","","package_manager");
+            $stmt = $connection->prepare("select autors.name,autors.email, packages.title,packages.creation_date,packages.description,packages.id,versions.Version_Number,release_date from autors_packages  inner join autors on autors.id = autors_packages.autor_id  inner join packages on packages.id = autors_packages.package_id inner join versions on versions.package_id = autors_packages.package_id WHERE release_date IN(SELECT max(release_date) FROM versions GROUP BY package_id) ORDER BY release_date DESC;");
+            $stmt->execute();
+            $result = $stmt->get_result();
+            while($rows = $result->fetch_assoc()){
+                echo '<option value=',$rows["id"],'>',$rows["title"],'</option>';
+            };
+            ?>
+        </select>
         <input type="submit">
     </form>
     <div id="php" class="mt-6 grid justify-items-center" style= "bg-red-600">
@@ -43,7 +66,6 @@
         $stmt = $connection->prepare("select autors.name,autors.email, packages.title,packages.creation_date,packages.description,packages.id,versions.Version_Number,release_date from autors_packages  inner join autors on autors.id = autors_packages.autor_id  inner join packages on packages.id = autors_packages.package_id inner join versions on versions.package_id = autors_packages.package_id WHERE release_date IN(SELECT max(release_date) FROM versions GROUP BY package_id) ORDER BY release_date DESC;");
         $stmt->execute();
         $result = $stmt->get_result();
-        // echo '<table class="bg-blue-100" style="width:80%">';
         while($row = $result->fetch_assoc()){
             echo '<div class="bg-slate-900 w-1/2 min-h-28 mb-3 border-sky-800 border flex align-middle transition-transform hover:scale-105">
                     <img src="./assets/images/package-x-generic.svg" alt="" width="80">
@@ -51,9 +73,12 @@
                         <div class="col-span-11">
                             <h2 class="font-medium">',$row["title"],'</h2>
                             <p class="text-slate-400">',$row["description"],'</p>
-                            <p class="text-slate-500">last updated: <span>',$row["creation_date"],'</span></p>
+                            <div class= "flex gap-5 text-xs">
+                                <p class="text-slate-500">creation date: <span>',$row["creation_date"],'</span></p>
+                                <p class="text-slate-500">last updated: <span>',$row["release_date"],'</span></p>
+                            </div>
                             <p class="text-slate-500">author: <span>',$row["name"],'</span></p>
-                            <p class="text-slate-500">current version: <span>1.0</span></p>
+                            <p class="text-slate-500">current version: <span>',$row["Version_Number"],'</span></p>
                         </div>
                         <form class="flex flex-col justify-center w-5" method="get">
                             <input type="hidden" id="delete" name="delete" value=',$row["id"],'>
@@ -74,7 +99,7 @@
             $author = $_POST["author"];
             $version = $_POST["version"];
             $dependancie = $_POST["dependancie"];
-            $tag = $_POST["tag"];
+            $tag_id = (int) $_POST["tag"];
             $creation_date = DATE('Y-m-d');
             $addpackage= $connection->prepare("insert into packages (title,description,creation_date) values(?,?,?);");
             $addautor= $connection->prepare("insert into autors (name,email) values(?,?);");
@@ -119,11 +144,36 @@
             // dd($version_result->num_rows);
             if ($version_result->num_rows==0) {
                 $addversion->execute();
-            }
+            };
+            $child_package_id = (int) $_POST["dependancie"];
+            $dependencie= $connection->prepare("insert into Dependencies (parent_package_id,child_package_id) values(?,?);");
+            $dependencie->bind_param("ii",$child_package_id,$package_id);
+            $finddependencie= $connection->prepare("select * from Dependencies where child_package_id like ? and parent_package_id like ?;");
+            $finddependencie->bind_param("ii",$child_package_id,$package_id);
+            $finddependencie->execute();
+            $result_d= $finddependencie->get_result();
+            if($result_d->num_rows==0){
+                $dependencie->execute();
+            };
+            $tag= $connection->prepare("insert into packages_tags (tag_id,package_id) values(?,?);");
+            $tag->bind_param("ii",$tag_id,$package_id);
+            $findtag= $connection->prepare("select * from packages_tags where tag_id like ? and package_id like ?;");
+            $findtag->bind_param("ii",$tag_id,$package_id);
+            $findtag->execute();
+            $result_d= $findtag->get_result();
+            if($result_d->num_rows==0){
+                $tag->execute();
+            };
         }elseif ($_SERVER["REQUEST_METHOD"]=="GET") {
             if (isset($_GET["delete"])) {
                 $packageDelete = (int) $_GET["delete"];
             };
+            $delete= $connection->prepare("DELETE FROM packages_tags WHERE package_id = ?;");
+            $delete->bind_param("i",$packageDelete);
+            $delete->execute();
+            $delete= $connection->prepare("DELETE FROM Dependencies WHERE child_package_id = ?;");
+            $delete->bind_param("i",$packageDelete);
+            $delete->execute();
             $delete= $connection->prepare("DELETE FROM versions WHERE package_id = ?;");
             $delete->bind_param("i",$packageDelete);
             $delete->execute();
