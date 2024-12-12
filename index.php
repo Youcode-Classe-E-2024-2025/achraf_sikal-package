@@ -21,20 +21,19 @@
         <button class="bg-blue-700 p-1 rounded-sm font-bold text-white hidden" onclick="document.getElementById('addform').classList.toggle('hidden'),this.classList.add('hidden'),this.nextElementSibling.classList.toggle('hidden')" >close</button>
         <button class="bg-blue-700 p-1 rounded-sm font-bold text-white" onclick="document.getElementById('addform').classList.toggle('hidden'),this.classList.add('hidden'),this.previousElementSibling.classList.toggle('hidden')" >add package</button>
     </div>
-    <form id="addform" action="#" method="post" class="grid gap-1 hidden w-2/12">
+    <form id="addform" action="data.php" method="post" class="grid gap-1 hidden w-2/12">
         <label for="package">Package: </label>
         <input type="text" name="package" class="text-black" required>
         <label for="descreption">Descreption: </label>
         <input type="text" name="descreption" class="text-black" required>
         <label for="version">Version: </label>
-        <input type="text" name="version" class="text-black" required>
+        <input type="text" pattern="^(?:(\d+)\.)?(?:(\d+)\.)?(\*|\d+)$" name="version" class="text-black" required>
         <label for="author">Your name: </label>
         <input type="name" name="author" class="text-black" required>
         <label for="email">Your E-mail: </label>
         <input type="email" name="email" class="text-black" required>
         <label for="tag">Tag: </label>
         <select name="tag" id="tag" class="text-black">
-            <option value="tag">tag</option>
             <?php
             $connection = new mysqli("localhost","root","","package_manager");
             $stmt = $connection->prepare("select * from tags;");
@@ -47,7 +46,6 @@
         </select>
         <label for="dependancie">Dependancie: </label>
         <select name="dependancie" id="dependancie" class="text-black">
-            <option value="dependancie">dependancie</option>
             <?php
             $connection = new mysqli("localhost","root","","package_manager");
             $stmt = $connection->prepare("select autors.name,autors.email, packages.title,packages.creation_date,packages.description,packages.id,versions.Version_Number,release_date from autors_packages  inner join autors on autors.id = autors_packages.autor_id  inner join packages on packages.id = autors_packages.package_id inner join versions on versions.package_id = autors_packages.package_id WHERE release_date IN(SELECT max(release_date) FROM versions GROUP BY package_id) ORDER BY release_date DESC;");
@@ -91,101 +89,29 @@
         // echo '</table>';
         ?>
     </div>
-    <div class="">
+    <div>
         <?php
-            if($_SERVER["REQUEST_METHOD"]=="POST"){
-            $title = $_POST["package"];
-            $description = $_POST["descreption"];
-            $author = $_POST["author"];
-            $version = $_POST["version"];
-            $dependancie = $_POST["dependancie"];
-            $tag_id = (int) $_POST["tag"];
-            $creation_date = DATE('Y-m-d');
-            $addpackage= $connection->prepare("insert into packages (title,description,creation_date) values(?,?,?);");
-            $addautor= $connection->prepare("insert into autors (name,email) values(?,?);");
-            $addpackage->bind_param("sss",$title,$description,$creation_date);
-            $addautor->bind_param("ss",$author,$email);
-            $findtitle= $connection->prepare("select * from packages where title like ?;");
-            $find_title= "%". $title ."%";
-            $findtitle->bind_param("s",$find_title);
-            $findtitle->execute();
-            $t_result= $findtitle->get_result();
-            if($t_result->num_rows==0){
-                $addpackage->execute();
-            };
-            $findtitle->execute();
-            $t_result= $findtitle->get_result();
-            $findemail= $connection->prepare("select * from autors where email like ?;");
-            $find_email= "%". $email ."%";
-            $findemail->bind_param("s",$find_email);
-            $findemail->execute();
-            $e_result= $findemail->get_result();
-            $author_id = $e_result->fetch_assoc()["id"];
-            $package_id =  $t_result->fetch_assoc()["id"];
-            if($e_result->num_rows==0){
-                $addautor->execute();
-            };
-            $author_package_relation= $connection->prepare("insert into autors_packages (autor_id,package_id) values(?,?);");
-            $author_package_relation->bind_param("ii",$author_id,$package_id);
-            $findrelation= $connection->prepare("select * from autors_packages where package_id like ?;");
-            $findrelation->bind_param("i",$package_id);
-            $findrelation->execute();
-            $relation_result= $findrelation->get_result();
-            if($relation_result->num_rows==0){
-                $author_package_relation->execute();
-            };
-            $findversion= $connection->prepare("select * from versions where Version_Number like ?;");
-            $findversion->bind_param("s",$version);
-            $findversion->execute();
-            $version_result= $findversion->get_result();
-            $addversion = $connection->prepare("insert into versions (Version_Number,description,Release_Date,package_id) values(?,?,?,?);");
-            
-            $addversion->bind_param("sssi",$version,$description,$creation_date,$package_id);
-            // dd($version_result->num_rows);
-            if ($version_result->num_rows==0) {
-                $addversion->execute();
-            };
-            $child_package_id = (int) $_POST["dependancie"];
-            $dependencie= $connection->prepare("insert into Dependencies (parent_package_id,child_package_id) values(?,?);");
-            $dependencie->bind_param("ii",$child_package_id,$package_id);
-            $finddependencie= $connection->prepare("select * from Dependencies where child_package_id like ? and parent_package_id like ?;");
-            $finddependencie->bind_param("ii",$child_package_id,$package_id);
-            $finddependencie->execute();
-            $result_d= $finddependencie->get_result();
-            if($result_d->num_rows==0){
-                $dependencie->execute();
-            };
-            $tag= $connection->prepare("insert into packages_tags (tag_id,package_id) values(?,?);");
-            $tag->bind_param("ii",$tag_id,$package_id);
-            $findtag= $connection->prepare("select * from packages_tags where tag_id like ? and package_id like ?;");
-            $findtag->bind_param("ii",$tag_id,$package_id);
-            $findtag->execute();
-            $result_d= $findtag->get_result();
-            if($result_d->num_rows==0){
-                $tag->execute();
-            };
-        }elseif ($_SERVER["REQUEST_METHOD"]=="GET") {
-            if (isset($_GET["delete"])) {
-                $packageDelete = (int) $_GET["delete"];
-            };
-            $delete= $connection->prepare("DELETE FROM packages_tags WHERE package_id = ?;");
-            $delete->bind_param("i",$packageDelete);
-            $delete->execute();
-            $delete= $connection->prepare("DELETE FROM Dependencies WHERE child_package_id = ?;");
-            $delete->bind_param("i",$packageDelete);
-            $delete->execute();
-            $delete= $connection->prepare("DELETE FROM versions WHERE package_id = ?;");
-            $delete->bind_param("i",$packageDelete);
-            $delete->execute();
-            $delete= $connection->prepare("DELETE FROM autors_packages WHERE package_id = ?;");
-            $delete->bind_param("i",$packageDelete);
-            $delete->execute();
-            $delete= $connection->prepare("DELETE FROM packages WHERE id = ?;");
-            $delete->bind_param("i",$packageDelete);
-            $delete->execute();
+        if (isset($_GET["delete"])) {
+            $packageDelete = (int) $_GET["delete"];
         };
+        $delete= $connection->prepare("DELETE FROM packages_tags WHERE package_id = ?;");
+        $delete->bind_param("i",$packageDelete);
+        $delete->execute();
+        $delete= $connection->prepare("DELETE FROM Dependencies WHERE child_package_id = ?;");
+        $delete->bind_param("i",$packageDelete);
+        $delete->execute();
+        $delete= $connection->prepare("DELETE FROM versions WHERE package_id = ?;");
+        $delete->bind_param("i",$packageDelete);
+        $delete->execute();
+        $delete= $connection->prepare("DELETE FROM autors_packages WHERE package_id = ?;");
+        $delete->bind_param("i",$packageDelete);
+        $delete->execute();
+        $delete= $connection->prepare("DELETE FROM packages WHERE id = ?;");
+        $delete->bind_param("i",$packageDelete);
+        $delete->execute();
         ?>
     </div>
     <footer>footer</footer>
+    <script>sessionStorage.setItem("reloadCount", 0);</script>
 </body>
 </html>
