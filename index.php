@@ -61,7 +61,7 @@
     <div id="php" class="mt-6 grid justify-items-center" style= "bg-red-600">
         <?php
         $connection = new mysqli("localhost","root","","package_manager");
-        $stmt = $connection->prepare("select autors.name,autors.email, packages.title,packages.creation_date,packages.description,packages.id,versions.Version_Number,release_date from autors_packages  inner join autors on autors.id = autors_packages.autor_id  inner join packages on packages.id = autors_packages.package_id inner join versions on versions.package_id = autors_packages.package_id WHERE release_date IN(SELECT max(release_date) FROM versions GROUP BY package_id) ORDER BY release_date DESC;");
+        $stmt = $connection->prepare("select autors.name,autors.email, tags.name as tag_name, packages.title,packages.creation_date,packages.description,packages.id,versions.Version_Number,release_date from autors_packages  inner join autors on autors.id = autors_packages.autor_id inner join packages on packages.id = autors_packages.package_id inner join packages_tags on packages.id = packages_tags.package_id inner join tags on tags.id = packages.id inner join versions on versions.package_id = autors_packages.package_id WHERE release_date IN(SELECT max(release_date) FROM versions GROUP BY package_id) ORDER BY release_date DESC;");
         $stmt->execute();
         $result = $stmt->get_result();
         while($row = $result->fetch_assoc()){
@@ -76,7 +76,10 @@
                                 <p class="text-slate-500">last updated: <span>',$row["release_date"],'</span></p>
                             </div>
                             <p class="text-slate-500">author: <span>',$row["name"],'</span></p>
-                            <p class="text-slate-500">current version: <span>',$row["Version_Number"],'</span></p>
+                            <div class= "flex gap-5 text-xs mb-1">
+                                <p class="text-slate-500">tags: <span>',$row["tag_name"],'</span></p>
+                                <p class="bg-blue-700 p-1 rounded-full text-white">current version: <span>',$row["Version_Number"],'</span></p>
+                            </div>
                         </div>
                         <form class="flex flex-col justify-center w-5" method="get">
                             <input type="hidden" id="delete" name="delete" value=',$row["id"],'>
