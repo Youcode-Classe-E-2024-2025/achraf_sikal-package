@@ -9,8 +9,6 @@ CREATE TABLE packages(
     title varchar(100) not null,
     description varchar(255) NOT null,
     creation_date DATE not null
-    -- autor_id int,
-    -- FOREIGN key(autor_id) REFERENCES autors(id)
 );
 CREATE TABLE versions(
 	id int PRIMARY KEY AUTO_INCREMENT,
