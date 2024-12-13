@@ -1,4 +1,3 @@
-create database package_manager;
 CREATE TABLE autors(
 	id int PRIMARY KEY AUTO_INCREMENT,
     name varchar(30) not null,
